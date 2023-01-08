@@ -1,0 +1,97 @@
+## @section Global parameters
+## Global Docker image parameters
+## Please, note that this will override the image parameters, including dependencies, configured to use the global value
+## Current available global Docker image parameters: imageRegistry, imagePullSecrets and storageClass
+
+## @param global.imageRegistry Global Docker image registry
+## @param global.imagePullSecrets Global Docker registry secret names as an array
+## @param global.storageClass Global StorageClass for Persistent Volume(s)
+##
+global:
+  imageRegistry: ""
+  ## E.g.
+  ## imagePullSecrets:
+  ##   - myRegistryKeySecretName
+  ##
+  imagePullSecrets: []
+  storageClass: ""
+
+cronjob:
+  schedule: "15 23 * * *"
+
+kubernetesClusterDomain: cluster.local
+loadBalancer: {}
+
+## External database configuration
+##
+externalDatabase:
+  ## @param externalDatabase.existingSecret Use existing secret (ignores previous password)
+  ## Must contain key `mariadb-password`
+  ## NOTE: When it's set, the `externalDatabase.password` parameter is ignored
+  ##
+  existingSecret: ""
+  ## @param externalDatabase.host Host of the existing database
+  ##
+  host: ""
+  ## @param externalDatabase.port Port of the existing database
+  ##
+  port: 3306
+  ## @param externalDatabase.user Existing username in the external db
+  ##
+  user: mediawiki
+  ## @param externalDatabase.password Password for the above username
+  ##
+  password: mediawiki
+  ## @param externalDatabase.database Name of the existing database
+  ##
+  database: mediawiki
+
+## @section DB parameters
+## MySQL image version
+## ref: https://hub.docker.com/r/bitnami/mysql/tags/
+## @param db.image.tag MySQL image tag
+## @param db.image.pullPolicy MySQL image pull policy
+## @param db.image.pullSecrets Specify docker-registry secret names as an array
+## @param db.rootUser.password MySQL admin password
+db:
+  db:
+    image:
+      repository: mysql
+      tag: "8.0"
+  ports:
+  - name: "3306"
+    port: 3306
+    targetPort: 3306
+  replicas: 1
+
+## @section Elasticsearch parameters
+## Elasticsearch image version
+## ref: https://docker.elastic.co/elasticsearch/elasticsearch
+## @param elasticsearch.image.tag Elasticsearch image tag
+## @param elasticsearch.image.pullPolicy Elasticsearch image pull policy
+elasticsearch:
+  elasticsearch:
+    image:
+      repository: docker.elastic.co/elasticsearch/elasticsearch
+      tag: 6.8.13
+  ports:
+  - name: "9200"
+    port: 9200
+    targetPort: 9200
+  replicas: 1
+
+## @section Canasta parameters
+## Canasta image version
+## ref: https://hub.docker.com/r/canastawiki/canasta/tags/
+## @param canasta.image.tag Canasta image tag
+## @param canasta.image.pullPolicy Canasta image pull policy
+web:
+  ports:
+  - name: "80"
+    port: 8081
+    targetPort: 80
+  replicas: 1
+  web:
+    image:
+      repository: ghcr.io/canastawiki/canasta
+      tag: latest

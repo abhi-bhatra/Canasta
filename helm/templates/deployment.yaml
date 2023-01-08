@@ -1,0 +1,171 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "canasta-helm.fullname" . }}-db
+  namespace: {{ .Release.Namespace | quote }}
+  labels:
+    io.kompose.service: db
+  {{- include "canasta-helm.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.db.replicas }}
+  selector:
+    matchLabels:
+      io.kompose.service: db
+    {{- include "canasta-helm.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        io.kompose.service: db
+      {{- include "canasta-helm.selectorLabels" . | nindent 8 }}
+      annotations:
+        kompose.cmd: kompose convert -f ../docker-compose.yml
+        kompose.version: 1.23.0 (HEAD)
+    spec:
+      containers:
+      - args:
+        - --default-authentication-plugin=mysql_native_password
+        - --expire_logs_days=3
+        - --secure-file-priv=
+        env:
+          - name: MYSQL_DATABASE
+            value: {{ include "canasta.databaseName" . | quote }}
+          - name: MYSQL_ROOT_HOST
+            value: "%"
+          - name: MYSQL_ROOT_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: {{ include "canasta-helm.fullname" . }}
+                key: password
+          - name: KUBERNETES_CLUSTER_DOMAIN
+            value: {{ .Values.kubernetesClusterDomain }}
+        image: {{ include "canasta.image" . | quote }}
+        name: db
+        ports:
+        - containerPort: 3306
+        resources: {}
+        securityContext:
+          capabilities:
+            add:
+            - SYS_NICE
+        volumeMounts:
+        - mountPath: /var/lib/mysql
+          name: mysql-data-volume
+      restartPolicy: Always
+      volumes:
+      - hostPath:
+          path: /opt/mediawiki/mysql-data-volume
+          type: DirectoryOrCreate
+        name: mysql-data-volume
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "canasta-helm.fullname" . }}-elasticsearch
+  namespace: {{ .Release.Namespace | quote }}
+  labels:
+    io.kompose.service: elasticsearch
+  {{- include "canasta-helm.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.elasticsearch.replicas }}
+  selector:
+    matchLabels:
+      io.kompose.service: elasticsearch
+    {{- include "canasta-helm.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        io.kompose.service: elasticsearch
+      {{- include "canasta-helm.selectorLabels" . | nindent 8 }}
+    spec:
+      containers:
+      - env:
+        - name: ES_JAVA_OPTS
+          value: -Xms256m -Xmx512m
+        - name: discovery.type
+          value: single-node
+        - name: KUBERNETES_CLUSTER_DOMAIN
+          value: {{ .Values.kubernetesClusterDomain }}
+        image: {{ .Values.elasticsearch.elasticsearch.image.repository }}:{{ .Values.elasticsearch.elasticsearch.image.tag | default .Chart.AppVersion }}
+        name: elasticsearch
+        ports:
+        - containerPort: 9200
+        resources: {}
+        volumeMounts:
+        - mountPath: /usr/share/elasticsearch/data
+          name: elasticsearch
+      restartPolicy: Always
+      volumes:
+      - hostPath:
+          path: /opt/mediawiki/elasticsearch
+          type: DirectoryOrCreate
+        name: elasticsearch
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "canasta-helm.fullname" . }}-web
+  namespace: {{ .Release.Namespace | quote }}
+  labels:
+    io.kompose.service: web
+  {{- include "canasta-helm.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.web.replicas }}
+  selector:
+    matchLabels:
+      io.kompose.service: web
+    {{- include "canasta-helm.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        io.kompose.service: web
+      {{- include "canasta-helm.selectorLabels" . | nindent 8 }}
+    spec:
+      containers:
+      - env:
+        - name: MW_SITE_SERVER
+          value: http://localhost
+        - name: PHP_POST_MAX_SIZE
+          value: 10M
+        - name: PHP_UPLOAD_MAX_FILESIZE
+          value: 10M
+        - name: KUBERNETES_CLUSTER_DOMAIN
+          value: {{ .Values.kubernetesClusterDomain }}
+        image: {{ .Values.web.web.image.repository }}:{{ .Values.web.web.image.tag | default .Chart.AppVersion }}
+        imagePullPolicy: Always
+        name: web
+        ports:
+        - containerPort: 80
+        resources: {}
+        volumeMounts:
+        - mountPath: /var/www/mediawiki/w/extensions
+          name: extensions
+        - mountPath: /var/www/mediawiki/w/skins
+          name: skins
+        - mountPath: /mediawiki/config
+          name: config
+        - mountPath: /mediawiki/images
+          name: images
+        - mountPath: /mediawiki/sitemap
+          name: sitemap
+      restartPolicy: Always
+      volumes:
+      - hostPath:
+          path: /opt/mediawiki/extensions
+          type: DirectoryOrCreate
+        name: extensions
+      - hostPath:
+          path: /opt/mediawiki/skins
+          type: DirectoryOrCreate
+        name: skins
+      - hostPath:
+          path: /opt/mediawiki/config
+          type: DirectoryOrCreate
+        name: config
+      - hostPath:
+          path: /opt/mediawiki/images
+          type: DirectoryOrCreate
+        name: images
+      - hostPath:
+          path: /opt/mediawiki/sitemap
+          type: DirectoryOrCreate
+        name: sitemap
