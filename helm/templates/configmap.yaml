@@ -1,0 +1,28 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: canasta-settings
+data:
+  CanastaFooterIcon.php: |-
+{{ .Files.Get "cnf/settings/CanastaFooterIcon.php" | indent 4 }}
+  Vector.php: |-
+{{ .Files.Get "cnf/settings/Vector.php" | indent 4 }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: canasta-config
+data:
+  composer.local.json: |-
+{{ .Files.Get "cnf/config/composer.local.json" | indent 4 }}
+  default.vcl: |-
+{{ .Files.Get "cnf/config/default.vcl" | indent 4 }}
+  my.cnf: |-
+{{ .Files.Get "cnf/config/my.cnf" | indent 4 }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: canasta-env
+data:
+{{ toYaml .Values.env | indent 2 }}

@@ -1,0 +1,26 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ tpl .Values.primary.persistence.existingClaim . }}
+spec:
+  accessModes:
+    {{- range .Values.primary.persistence.accessModes }}
+    - {{ . | quote }}
+    {{- end }}
+  resources:
+    requests:
+      storage: {{ .Values.primary.persistence.size | quote }}
+  volumeMode: Filesystem
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ tpl .Values.secondary.persistence.existingClaim . }}
+spec:
+  accessModes:
+    {{- range .Values.secondary.persistence.accessModes }}
+    - {{ . | quote }}
+    {{- end }}
+  resources:
+    requests:
+      storage:  {{ .Values.secondary.persistence.size | quote }}

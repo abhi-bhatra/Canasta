@@ -6,6 +6,13 @@ Expand the name of the chart.
 {{- end }}
 
 {{/*
+Return the proper Canasta image name
+*/}}
+{{- define "canasta.image" -}}
+{{ include "common.images.image" (dict "imageRoot" .Values.image "global" .Values.global) }}
+{{- end -}}
+
+{{/*
 Create a default fully qualified app name.
 We truncate at 63 chars because some Kubernetes name fields are limited to this (by the DNS naming spec).
 If release name contains chart name it will be used as a full name.
@@ -49,24 +56,6 @@ Selector labels
 app.kubernetes.io/name: {{ include "canasta-helm.name" . }}
 app.kubernetes.io/instance: {{ .Release.Name }}
 {{- end }}
-
-{{/*
-Create the name of the service account to use
-*/}}
-{{- define "canasta-helm.serviceAccountName" -}}
-{{- if .Values.serviceAccount.create }}
-{{- default (include "canasta-helm.fullname" .) .Values.serviceAccount.name }}
-{{- else }}
-{{- default "default" .Values.serviceAccount.name }}
-{{- end }}
-{{- end }}
-
-{{/*
-Return the proper Canasta DB image name
-*/}}
-{{- define "canasta.image" -}}
-{{ printf "%s" .Values.db.db.image.repository }}:{{ printf "%s" .Values.db.db.image.tag }}
-{{- end -}}
 
 {{/*
 Return the MySQL Database Name

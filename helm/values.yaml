@@ -16,11 +16,40 @@ global:
   imagePullSecrets: []
   storageClass: ""
 
-cronjob:
-  schedule: "15 23 * * *"
-
-kubernetesClusterDomain: cluster.local
 loadBalancer: {}
+
+## @section Elasticsearch parameters
+## Elasticsearch image version
+## ref: https://docker.elastic.co/elasticsearch/elasticsearch
+## @param elasticsearch.image.tag Elasticsearch image tag
+## @param elasticsearch.image.pullPolicy Elasticsearch image pull policy
+elasticsearch:
+  registry: docker.elastic.co
+  repository: elasticsearch/elasticsearch 
+  tag: 7.10.2
+
+image:
+  registry: ghcr.io
+  repository: canastawiki/canasta
+  tag: 1.3.0
+  digest: ""
+  replicaCount: 1
+  ## Specify a imagePullPolicy
+  ## Defaults to 'Always' if image tag is 'latest', else set to 'IfNotPresent'
+  ## ref: https://kubernetes.io/docs/user-guide/images/#pre-pulling-images
+  ##
+  pullPolicy: IfNotPresent
+  ## Optionally specify an array of imagePullSecrets.
+  ## Secrets must be manually created in the namespace.
+  ## ref: https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/
+  ## e.g:
+  ## pullSecrets:
+  ##   - myRegistryKeySecretName
+  ##
+  pullSecrets: []
+  ## Enable debug mode
+  ##
+  debug: false
 
 ## External database configuration
 ##
@@ -38,60 +67,39 @@ externalDatabase:
   port: 3306
   ## @param externalDatabase.user Existing username in the external db
   ##
-  user: mediawiki
+  user: bn_mediawiki
   ## @param externalDatabase.password Password for the above username
   ##
-  password: mediawiki
+  password: ""
   ## @param externalDatabase.database Name of the existing database
   ##
-  database: mediawiki
+  database: bitnami_mediawiki
 
-## @section DB parameters
-## MySQL image version
-## ref: https://hub.docker.com/r/bitnami/mysql/tags/
-## @param db.image.tag MySQL image tag
-## @param db.image.pullPolicy MySQL image pull policy
-## @param db.image.pullSecrets Specify docker-registry secret names as an array
-## @param db.rootUser.password MySQL admin password
-db:
-  db:
-    image:
-      repository: mysql
-      tag: "8.0"
-  ports:
-  - name: "3306"
-    port: 3306
-    targetPort: 3306
-  replicas: 1
+env:
+  MYSQL_PASSWORD: "mediawiki"
+  MW_SITE_SERVER: "https://canastacli.tk"
+  MW_SITE_FQDN: "canastacli.tk"
+  PHP_UPLOAD_MAX_FILESIZE: "10M"
+  PHP_POST_MAX_SIZE: "10M"
+  PHP_MAX_INPUT_VARS: "1000"
+  MW_SITEMAP_IDENTIFIER: "mediawiki"
+  USE_EXTERNAL_DB: "true"
+  MW_SITEMAP_SUBDIR:
 
-## @section Elasticsearch parameters
-## Elasticsearch image version
-## ref: https://docker.elastic.co/elasticsearch/elasticsearch
-## @param elasticsearch.image.tag Elasticsearch image tag
-## @param elasticsearch.image.pullPolicy Elasticsearch image pull policy
-elasticsearch:
-  elasticsearch:
-    image:
-      repository: docker.elastic.co/elasticsearch/elasticsearch
-      tag: 6.8.13
-  ports:
-  - name: "9200"
-    port: 9200
-    targetPort: 9200
-  replicas: 1
+discovery: "single-node"
+bootstrap: true
+ES_JAVA_OPTS: "-Xms512m -Xmx512m"
 
-## @section Canasta parameters
-## Canasta image version
-## ref: https://hub.docker.com/r/canastawiki/canasta/tags/
-## @param canasta.image.tag Canasta image tag
-## @param canasta.image.pullPolicy Canasta image pull policy
-web:
-  ports:
-  - name: "80"
-    port: 8081
-    targetPort: 80
-  replicas: 1
-  web:
-    image:
-      repository: ghcr.io/canastawiki/canasta
-      tag: latest
+primary:
+  persistence:
+    existingClaim: "sitemap-data"
+    size: "200Mi"
+    accessModes:
+      - ReadWriteOnce
+
+secondary:
+  persistence:
+    existingClaim: "elasticsearch-data"
+    size: "5Gi"
+    accessModes:
+      - ReadWriteOnce
