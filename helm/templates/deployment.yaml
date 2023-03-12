@@ -50,7 +50,7 @@ spec:
           value: "-Xms512m -Xmx512m"
         resources:
           requests:
-            memory: "2Gi"
+            memory: {{ .Values.elasticsearch.memory }}
         volumeMounts:
         - mountPath: /usr/share/elasticsearch/data
           name: elasticsearch
